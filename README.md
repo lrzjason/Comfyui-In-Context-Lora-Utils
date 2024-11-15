@@ -1,9 +1,9 @@
 # Comfyui-In-Context-Lora-Utils
 
 ## How to install 
-Download the zip file. 
-Extract to ..\ComfyUI\custom_nodes. 
-Restart ComfyUI 
+- Download the zip file. 
+- Extract to ..\ComfyUI\custom_nodes. 
+- Restart ComfyUI 
 
 Workflow:
 https://civitai.com/models/933018
