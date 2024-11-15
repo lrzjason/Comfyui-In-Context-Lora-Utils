@@ -10,3 +10,7 @@ https://civitai.com/models/933018
 
 Simple Try On Lora:
 https://civitai.com/models/950111/flux-simple-try-on-in-context-lora
+
+Example:
+![alt text](https://github.com/[username]/[reponame]/blob/[branch]/image.jpg?raw=true)
+![alt text](https://github.com/[username]/[reponame]/blob/[branch]/image.jpg?raw=true)
