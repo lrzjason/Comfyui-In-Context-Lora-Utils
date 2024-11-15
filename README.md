@@ -15,11 +15,11 @@ Example:
 ![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/example_1.png)
 ![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/example_2.png)
 
-Twitter:
-@Lrzjason
-Contact:
-lrzjason@gmail.com
-QQGroup: 
-866612947
-Civitai:
+Twitter:  
+@Lrzjason  
+Contact:  
+lrzjason@gmail.com  
+QQGroup:  
+866612947  
+Civitai:  
 https://civitai.com/user/xiaozhijason
