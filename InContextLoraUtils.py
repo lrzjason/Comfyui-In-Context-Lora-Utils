@@ -59,13 +59,13 @@ class AddMaskForICLora:
                         }),
                     },
                 }
-    RETURN_TYPES = ("IMAGE", "MASK", "INT", "INT", "INT", "INT")
-    RETURN_NAMES = ("IMAGE", "MASK", "x_offset", "y_offset", "target_width", "target_height")
+    RETURN_TYPES = ("IMAGE", "MASK", "INT", "INT", "INT", "INT", "INT", "INT")
+    RETURN_NAMES = ("IMAGE", "MASK", "x_offset", "y_offset", "target_width", "target_height", "total_width", "total_height")
     FUNCTION = "add_mask"
     OUTPUT_NODE = True
 
     CATEGORY = "ICLoraUtils/AddMaskForICLora"
-    def add_mask(self, images, patch_mode, output_length):
+    def add_mask(self, images, patch_mode, output_length, patch_color):
         # patched_images = []
         # patched_masks = []
         if output_length % 64 != 0:
@@ -164,11 +164,11 @@ class AddMaskForICLora:
             min_y = 50
         
         mask = torch.zeros((concatenated_image.shape[0], concatenated_image.shape[1]))
-        min_y = min_y / 100.0 * concatenated_image.shape[0]
-        max_y = max_y / 100.0 * concatenated_image.shape[0]
-        min_x = min_x / 100.0 * concatenated_image.shape[1]
-        max_x = max_x / 100.0 * concatenated_image.shape[1]
-        mask[int(min_y):int(max_y)+1, int(min_x):int(max_x)+1] = 1
+        min_y = int(min_y / 100.0 * concatenated_image.shape[0])
+        max_y = int(max_y / 100.0 * concatenated_image.shape[0])
+        min_x = int(min_x / 100.0 * concatenated_image.shape[1])
+        max_x = int(max_x / 100.0 * concatenated_image.shape[1])
+        mask[min_y:max_y+1, min_x:max_x+1] = 1
         # print(mask.shape)
         # print(mask)
         
@@ -180,7 +180,7 @@ class AddMaskForICLora:
         # print('return_masks',return_masks.shape)
         return_images = concatenated_image
         # print('return_images',return_images.shape)
-        return (return_images, return_masks, min_x, min_y, target_width, target_height)
+        return (return_images, return_masks, min_x, min_y, target_width, target_height, concatenated_image.shape[1], concatenated_image.shape[0])
 
 NODE_CLASS_MAPPINGS = {
     "AddMaskForICLora": AddMaskForICLora,
