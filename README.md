@@ -1,5 +1,8 @@
 # Comfyui-In-Context-Lora-Utils
 
+## Latest Change Logs:
+- **2024-11-22:** Update Two Images input and related masks input
+
 ## How to install 
 - Download the zip file. 
 - Extract to ..\ComfyUI\custom_nodes. 
@@ -14,6 +17,10 @@ https://civitai.com/models/950111/flux-simple-try-on-in-context-lora
 ## Example:  
 ![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/example_1.png)
 ![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/example_2.png)
+
+
+## Change Logs:
+- **2024-11-22:** Update Two Images input and related masks input
 
 ## Contact: 
 - Twitter:  
