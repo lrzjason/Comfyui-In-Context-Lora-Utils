@@ -62,8 +62,8 @@ def fit_image(image,mask=None,output_length=1536,patch_mode="auto"):
         else:
             patch_mode = "patch_right"
     elif patch_mode == "patch_bottom":
-        target_width = int(half_length)
-        target_height = int(base_length)
+        target_width = int(base_length)
+        target_height = int(half_length)
     print("patch_mode",patch_mode)
         
     if image_width < target_width or image_height < target_height:
@@ -199,8 +199,8 @@ class AddMaskForICLora:
             else:
                 image2_mask = second_mask[0]
             image2,image2_mask,_,_,_ = fit_image(image2,image2_mask,output_length,patch_mode)
-            print("image2_mask",image2_mask)
-            print("image2_mask.shape",image2_mask.shape)
+            # print("image2_mask",image2_mask)
+            # print("image2_mask.shape",image2_mask.shape)
         else:
             image2 = create_image_from_color(target_width,target_height, color=patch_color)
             image2 = torch.from_numpy(image2)
@@ -216,10 +216,10 @@ class AddMaskForICLora:
         min_x = 0
         # max_x = 100
         
-        print("image1.shape")
-        print(image1.shape)
-        print("image2.shape")
-        print(image2.shape)
+        # print("image1.shape")
+        # print(image1.shape)
+        # print("image2.shape")
+        # print(image2.shape)
         if second_mask is None or np.all(image2_mask == 0):
             print("second_mask is None",second_mask is None)
             print("np.all(image2_mask[0] == 0)",np.all(image2_mask == 0))
