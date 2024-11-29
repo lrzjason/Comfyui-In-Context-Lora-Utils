@@ -37,4 +37,4 @@ https://civitai.com/models/950111/flux-simple-try-on-in-context-lora
 - Buy me a coffee:
 ![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/bmc_qr.png)
 - WeChat
-![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/wechat.png)
+![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/wechat.jpg)
