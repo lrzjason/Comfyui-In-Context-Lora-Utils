@@ -15,6 +15,15 @@ Simple Try On Lora:
 https://civitai.com/models/950111/flux-simple-try-on-in-context-lora
 
 ## Example:  
+- v3 Object Replacement
+![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/v3_object_replacement.png)
+- v3 Generate On Target Position
+![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/v3_target_position.png)
+- v3 Virtual Try On
+![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/v3_try_on.png)
+
+
+## OLD NODE Example:
 ![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/example_1.png)
 ![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/example_2.png)
 
