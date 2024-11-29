@@ -1,7 +1,7 @@
 # Comfyui-In-Context-Lora-Utils
 
 ## Latest Change Logs:
-- **2024-11-22:** Update Two Images input and related masks input
+- **2024-11-29:** Recontruct the node and seperate from old node, new nodes: CreateContextWindow, ConcatContextWindow
 
 ## How to install 
 - Download the zip file. 
@@ -9,7 +9,7 @@
 - Restart ComfyUI 
 
 Workflow:
-https://civitai.com/models/933018
+https://civitai.com/models/933018?modelVersionId=1110698
 
 Simple Try On Lora:
 https://civitai.com/models/950111/flux-simple-try-on-in-context-lora
@@ -20,6 +20,7 @@ https://civitai.com/models/950111/flux-simple-try-on-in-context-lora
 
 
 ## Change Logs:
+- **2024-11-29:** Recontruct the node and seperate from old node, new nodes: CreateContextWindow, ConcatContextWindow
 - **2024-11-22:** Update Two Images input and related masks input
 
 ## Contact: 
