@@ -31,3 +31,9 @@ https://civitai.com/models/950111/flux-simple-try-on-in-context-lora
 - 866612947  
 - Civitai:  
 - https://civitai.com/user/xiaozhijason
+
+## Sponsors me for more open source project::
+- Buy me a coffee:
+![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/bmc_qr.png)
+- WeChat
+![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/wechat.png)

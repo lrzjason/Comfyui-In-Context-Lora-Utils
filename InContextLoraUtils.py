@@ -42,7 +42,7 @@ def fit_image(image,mask=None,output_length=1536,patch_mode="auto"):
     if mask is not None:
         mask = mask.detach().cpu().numpy()
     
-    print("np.all(mask == 0)",np.all(mask == 0))
+    # print("np.all(mask == 0)",np.all(mask == 0))
     base_length = int(output_length /3 *2)
     half_length = int(output_length /2)
     image_height, image_width, _ = image.shape
@@ -64,17 +64,17 @@ def fit_image(image,mask=None,output_length=1536,patch_mode="auto"):
     elif patch_mode == "patch_bottom":
         target_width = int(base_length)
         target_height = int(half_length)
-    print("patch_mode",patch_mode)
+    # print("patch_mode",patch_mode)
         
     if image_width < target_width or image_height < target_height:
-        print("image too small, resize to ", target_width, target_height)
+        # print("image too small, resize to ", target_width, target_height)
         if image_height > image_width:
             new_width = int(image_width*(target_height/image_height))
             new_height = target_height
             # print(new_width,new_height)
             image = resize(image, (new_width,new_height))
-            print("mask",mask)
-            print("mask.shape",mask.shape)
+            # print("mask",mask)
+            # print("mask.shape",mask.shape)
             if mask is not None:
                 mask = resize(mask, (new_width,new_height),cv2.INTER_NEAREST_EXACT)
         else:
@@ -83,8 +83,8 @@ def fit_image(image,mask=None,output_length=1536,patch_mode="auto"):
             # print(new_width,new_height)
             image = resize(image, (new_width,new_height))
             
-            print("mask",mask)
-            print("mask.shape",mask.shape)
+            # print("mask",mask)
+            # print("mask.shape",mask.shape)
             if mask is not None:
                 mask = resize(mask, (new_width,new_height),cv2.INTER_NEAREST_EXACT)
             
@@ -138,8 +138,8 @@ def fit_image(image,mask=None,output_length=1536,patch_mode="auto"):
         resized_image = resize(cropped_image, (target_width,target_height))
         
         if mask is not None:
-            print("mask",mask)
-            print("mask.shape",mask.shape)
+            # print("mask",mask)
+            # print("mask.shape",mask.shape)
             cropped_mask = mask[crop_y:image_height-crop_y, crop_x:image_width-crop_x]
             resized_mask = resize(cropped_mask, (target_width,target_height),cv2.INTER_NEAREST_EXACT)
 
@@ -221,8 +221,8 @@ class AddMaskForICLora:
         # print("image2.shape")
         # print(image2.shape)
         if second_mask is None or np.all(image2_mask == 0):
-            print("second_mask is None",second_mask is None)
-            print("np.all(image2_mask[0] == 0)",np.all(image2_mask == 0))
+            # print("second_mask is None",second_mask is None)
+            # print("np.all(image2_mask[0] == 0)",np.all(image2_mask == 0))
             image2_mask = torch.ones((image1.shape[0], image1.shape[1]))
             
         if patch_mode == "patch_right":
