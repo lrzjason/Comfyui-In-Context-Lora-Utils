@@ -1,7 +1,7 @@
 # Comfyui-In-Context-Lora-Utils
 
 ## Latest Change Logs:
-- **2024-11-29:** Recontruct the node and seperate from old node, new nodes: CreateContextWindow, ConcatContextWindow
+- **2024-11-30:** Add AutoPatch node, it is able to automatically select patch mode and patch type
 
 ## How to install 
 - Download the zip file. 
@@ -31,6 +31,7 @@ https://civitai.com/models/950111/flux-simple-try-on-in-context-lora
 ## Change Logs:
 - **2024-11-29:** Recontruct the node and seperate from old node, new nodes: CreateContextWindow, ConcatContextWindow
 - **2024-11-22:** Update Two Images input and related masks input
+- **2024-11-30:** Add AutoPatch node, it is able to automatically select patch mode and patch type
 
 ## Contact: 
 - Twitter:  
