@@ -41,30 +41,51 @@ def get_target_width_height(image, output_length, patch_mode, patch_type):
     
     return output_length, patch_mode, target_width, target_height
 
-class GetWidthHeightAndMode:
+class AutoPatch:
     @classmethod
     def INPUT_TYPES(s):
         return {
                     "required": { 
-                        "image": ("IMAGE",),
-                        "output_length": ("INT", {
-                            "default": 1536,
-                        }),
-                        "patch_mode": (["auto", "patch_right", "patch_bottom"], {
-                            "default": "auto",
-                        }),
-                        "patch_type": (["1:1", "4:3", "9:16"], {
-                            "default": "1:1",
-                        }),
+                        "mask2": ("MASK",),
                     }
         }
-    RETURN_TYPES = ("INT",  "STRING", "INT", "INT")
-    RETURN_NAMES = ("output_length", "patch_mode", "target_width", "target_height")
-    FUNCTION = "get_mode"
-    CATEGORY = "ICEditUtils/GetWidthHeightAndMode"
-    def get_mode(self, image, output_length, patch_mode, patch_type):
-        output_length, patch_mode, target_width, target_height = get_target_width_height(image, output_length, patch_mode, patch_type)
-        return (output_length, patch_mode, target_width, target_height, patch_type, )
+    RETURN_TYPES = ("STRING",  "STRING")
+    RETURN_NAMES = ("patch_mode", "patch_type")
+    FUNCTION = "auto_path"
+    CATEGORY = "InContextUtils/AutoPatch"
+    def auto_path(self, mask2):
+        mask = mask2[0].clone()
+        mask = mask.detach().cpu().numpy()
+        
+        # Convert the binary mask to 8-bit
+        mask = (mask > 0).astype(np.uint8)
+
+        # Alternatively, using OpenCV (if your mask is not binary, i.e., has non-1/0 values):
+        mask = cv2.convertScaleAbs(mask)
+        # Step 1: Find contours of the "1" shape
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Assume there is only one shape of interest
+        contour = contours[0]
+        # Step 2: Calculate the bounding box (x, y, width, height)
+        _, _, ori_bb_width, ori_bb_height = cv2.boundingRect(contour)
+        patch_type_set = ["1:1","3:4","9:16"]
+        vertical_ratio = [1/1,3/4,9/16]
+        vertical_ratio = [round(ratio, 2) for ratio in vertical_ratio]
+        horizontal_ratio = [1/1,4/3,16/9]
+        horizontal_ratio = [round(ratio, 2) for ratio in horizontal_ratio]
+        
+        target_ratio = vertical_ratio
+        mask_ratio = round(ori_bb_width / ori_bb_height, 2)
+        if ori_bb_height > ori_bb_width:
+            patch_mode = "patch_right"
+            closest_ratio = min(target_ratio, key=lambda x: abs(x - mask_ratio))
+        else:
+            patch_mode = "patch_bottom"
+            target_ratio = horizontal_ratio
+            closest_ratio = min(target_ratio, key=lambda x: abs(x - mask_ratio))
+        # Find the closest vertical ratio
+        patch_type = patch_type_set[target_ratio.index(closest_ratio)]
+        return (patch_mode, patch_type, )
     
 
 def get_padding(image, target_width, target_height):
@@ -79,10 +100,6 @@ def get_padding(image, target_width, target_height):
         scale = (target_width/image_width)
         new_width = target_width
         new_height = int(image_height*scale)
-    # print("image_width, image_height", image_width, image_height)
-    # print("target_width, target_height", target_width, target_height)
-    # print("new_width, new_height", new_width, new_height)
-    # print("scale", scale)
     diff_x = (target_width - new_width) / scale
     diff_y = (target_height - new_height) / scale
     pad_x = diff_x // 2
@@ -167,8 +184,8 @@ class CreateContextWindow:
             image1 = input_image[0].clone()
             image1, image1_mask, target_width, target_height, patch_mode = fit_image(image1,None,output_length,patch_mode,patch_type)
         
-            print("image1.shape",image1.shape)
-            print("image1_mask.shape",image1_mask.shape)
+            # print("image1.shape",image1.shape)
+            # print("image1_mask.shape",image1_mask.shape)
             image1 = np.clip(255. * image1, 0, 255).astype(np.float32) / 255.0
             image1 = torch.from_numpy(image1)[None,]
             image1_mask = torch.from_numpy(image1_mask)[None,]
@@ -198,8 +215,7 @@ class CreateContextWindow:
         # print("ori crop_image_width, crop_image_height", crop_image_width, crop_image_height)
         
         if crop_image_width >= crop_image_height:
-            if (patch_mode == "auto" and image_width > image_height) or patch_mode == "patch_bottom":
-                patch_mode = "patch_bottom"
+            if patch_mode == "patch_bottom":
                 crop_output_length = int(crop_image_width / long_part * total)
                 crop_image_height = int(crop_output_length / total * short_part)
             else:
@@ -207,8 +223,7 @@ class CreateContextWindow:
                 crop_output_length = int(crop_image_width / short_part * total)
                 crop_image_height = int(crop_output_length / total * long_part)
         else:
-            if (patch_mode == "auto" and image_width > image_height) or patch_mode == "patch_bottom":
-                patch_mode = "patch_bottom"
+            if patch_mode == "patch_bottom":
                 crop_output_length = int(crop_image_height / short_part * total)
                 crop_image_width = int(crop_output_length / total * long_part)
             else:
@@ -220,20 +235,37 @@ class CreateContextWindow:
         new_x = int(center_x - crop_image_width // 2)
         new_y = int(center_y - crop_image_height // 2)
         
-        # print("new_x,new_y", new_x,new_y)
-        # print("crop_output_length", crop_output_length)
-        # print("crop_image_width, crop_image_height", crop_image_width, crop_image_height)
-        
         if new_y+crop_image_height > image_height:
             new_y = image_height - crop_image_height
         if new_x+crop_image_width > image_width:
             new_x = image_width - crop_image_width
         if new_x < 0:
+            diff = abs(new_x)
+            # reset new_y
             new_x = 0
+            crop_image_width = crop_image_width - diff
+            # recal crop_image_height
+            if patch_mode == "patch_bottom":
+                patch_mode = "patch_bottom"
+                crop_output_length = int(crop_image_width / long_part * total)
+                crop_image_height = int(crop_output_length / total * short_part)
+            else:
+                patch_mode = "patch_right"
+                crop_output_length = int(crop_image_width / short_part * total)
+                crop_image_height = int(crop_output_length / total * long_part)
         if new_y < 0:
+            diff = abs(new_y)
+            # reset new_y
             new_y = 0
+            crop_image_height = crop_image_height - diff
+            # recal crop_image_width
+            if patch_mode == "patch_bottom":
+                crop_output_length = int(crop_image_height / short_part * total)
+                crop_image_width = int(crop_output_length / total * long_part)
+            else:
+                crop_output_length = int(crop_image_height / long_part * total)
+                crop_image_width = int(crop_output_length / total * short_part)
             
-        
         fit_image_part = image[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
         fit_mask_part = mask[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
         
@@ -250,9 +282,6 @@ class CreateContextWindow:
         fit_image_part = torch.from_numpy(fit_image_part)[None,]
         fit_mask_part = torch.from_numpy(fit_mask_part)[None,]
         
-        # output_patch_mode = (["auto", "patch_right", "patch_bottom"], {
-        #     "default": patch_mode,
-        # })
         return (resized_image_part, resized_mask_part, patch_mode, new_x, new_y, up_scale, fit_image_part, fit_mask_part, )
 def fit_image(image,mask=None,output_length=1536,patch_mode="auto",patch_type="3:4",target_width=None,target_height=None):
     if torch.is_tensor(image):
@@ -354,8 +383,8 @@ def fit_image(image,mask=None,output_length=1536,patch_mode="auto",patch_type="3
     if torch.is_tensor(resized_mask):
         resized_mask = resized_mask.detach().cpu().numpy()
     
-    print("torch.is_tensor(resized_image)",torch.is_tensor(resized_image))
-    print("torch.is_tensor(resized_mask)",torch.is_tensor(resized_mask))
+    # print("torch.is_tensor(resized_image)",torch.is_tensor(resized_image))
+    # print("torch.is_tensor(resized_mask)",torch.is_tensor(resized_mask))
     return resized_image, resized_mask, target_width, target_height, patch_mode
 
 class ConcatContextWindow:
