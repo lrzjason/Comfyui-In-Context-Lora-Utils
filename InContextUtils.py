@@ -54,11 +54,12 @@ class AutoPatch:
     FUNCTION = "auto_path"
     CATEGORY = "InContextUtils/AutoPatch"
     def auto_path(self, mask2):
-        if mask2 is None or np.all(mask2 == 0):
+        if mask2 is None:
             raise NotImplementedError("mask2 must be a tensor")
-    
-        mask = mask2[0].clone()
-        mask = mask.detach().cpu().numpy()
+        else:
+            if torch.is_tensor(mask2):
+                mask = mask2[0].clone()
+                mask = mask.detach().cpu().numpy()
         
         # Convert the binary mask to 8-bit
         mask = (mask > 0).astype(np.uint8)
