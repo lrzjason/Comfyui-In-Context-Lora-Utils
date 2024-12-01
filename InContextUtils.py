@@ -160,23 +160,32 @@ class CreateContextWindow:
     
     
     def create_context_window(self, input_image, input_mask, patch_mode, patch_type,output_length=1536, pixel_buffer=64):
-        image = input_image[0].clone()
-        mask = input_mask[0].clone()
-        image = image.detach().cpu().numpy()
-        mask = mask.detach().cpu().numpy()
-        
-        # Convert the binary mask to 8-bit
-        mask = (mask > 0).astype(np.uint8)
+        if torch.is_tensor(input_image):
+            image = input_image[0].clone()
+            image = image.detach().cpu().numpy()
+        else:
+            raise NotImplementedError("input_image must be a tensor")
+        if mask is not None:
+            if torch.is_tensor(mask):
+                mask = input_mask[0].clone()
+                mask = mask.detach().cpu().numpy()
+                # image = input_image[0].clone()
+                # mask = mask.detach().cpu().numpy()
+                
+                # Convert the binary mask to 8-bit
+                mask = (mask > 0).astype(np.uint8)
 
-        # Alternatively, using OpenCV (if your mask is not binary, i.e., has non-1/0 values):
-        mask = cv2.convertScaleAbs(mask)
-        if output_length % 64 != 0:
-                output_length = output_length - (output_length % 64)
-        output_length, patch_mode, target_width, target_height = get_target_width_height(image, output_length, patch_mode, patch_type)
-        
-        image_height, image_width, _ = image.shape
-        # Step 1: Find contours of the "1" shape
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                # Alternatively, using OpenCV (if your mask is not binary, i.e., has non-1/0 values):
+                mask = cv2.convertScaleAbs(mask)
+                if output_length % 64 != 0:
+                        output_length = output_length - (output_length % 64)
+                output_length, patch_mode, target_width, target_height = get_target_width_height(image, output_length, patch_mode, patch_type)
+                
+                image_height, image_width, _ = image.shape
+                # Step 1: Find contours of the "1" shape
+                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            else:
+                raise NotImplementedError("input_mask must be a tensor")
         
         
         if input_mask is None or np.all(mask == 0) or contours[0] is None:
