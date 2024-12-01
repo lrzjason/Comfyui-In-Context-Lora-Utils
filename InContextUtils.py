@@ -68,10 +68,15 @@ class AutoPatch:
         mask = cv2.convertScaleAbs(mask)
         # Step 1: Find contours of the "1" shape
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        # Assume there is only one shape of interest
-        contour = contours[0]
-        # Step 2: Calculate the bounding box (x, y, width, height)
-        _, _, ori_bb_width, ori_bb_height = cv2.boundingRect(contour)
+        
+        if contours.__len__() == 0:
+            ori_bb_height = mask.shape[0]
+            ori_bb_width = mask.shape[1]
+        else:
+            # Assume there is only one shape of interest
+            contour = contours[0]
+            # Step 2: Calculate the bounding box (x, y, width, height)
+            _, _, ori_bb_width, ori_bb_height = cv2.boundingRect(contour)
         patch_type_set = ["1:1","3:4","9:16"]
         vertical_ratio = [1/1,3/4,9/16]
         vertical_ratio = [round(ratio, 2) for ratio in vertical_ratio]
