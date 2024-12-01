@@ -165,8 +165,8 @@ class CreateContextWindow:
             image = image.detach().cpu().numpy()
         else:
             raise NotImplementedError("input_image must be a tensor")
-        if mask is not None:
-            if torch.is_tensor(mask):
+        if input_mask is not None:
+            if torch.is_tensor(input_mask):
                 mask = input_mask[0].clone()
                 mask = mask.detach().cpu().numpy()
                 # image = input_image[0].clone()
