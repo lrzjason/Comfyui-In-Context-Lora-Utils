@@ -54,6 +54,9 @@ class AutoPatch:
     FUNCTION = "auto_path"
     CATEGORY = "InContextUtils/AutoPatch"
     def auto_path(self, mask2):
+        if mask2 is None or np.all(mask2 == 0):
+            raise NotImplementedError("mask2 must be a tensor")
+    
         mask = mask2[0].clone()
         mask = mask.detach().cpu().numpy()
         
@@ -86,7 +89,7 @@ class AutoPatch:
         # Find the closest vertical ratio
         patch_type = patch_type_set[target_ratio.index(closest_ratio)]
         return (patch_mode, patch_type, )
-    
+
 
 def get_padding(image, target_width, target_height):
     image_height, image_width, _ = image.shape
