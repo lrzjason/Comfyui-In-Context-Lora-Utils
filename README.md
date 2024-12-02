@@ -11,9 +11,6 @@
 Workflow:
 https://civitai.com/models/933018?modelVersionId=1110698
 
-Simple Try On Lora:
-https://civitai.com/models/950111/flux-simple-try-on-in-context-lora
-
 ## Example:  
 - v3 Object Replacement
 ![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/v3_object_replacement.png)
@@ -24,6 +21,9 @@ https://civitai.com/models/950111/flux-simple-try-on-in-context-lora
 
 
 ## OLD NODE Example:
+Simple Try On Lora:
+https://civitai.com/models/950111/flux-simple-try-on-in-context-lora
+
 ![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/example_1.png)
 ![alt text](https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils/blob/main/image/example_2.png)
 
