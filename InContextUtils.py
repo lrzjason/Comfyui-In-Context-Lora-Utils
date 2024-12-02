@@ -69,14 +69,23 @@ class AutoPatch:
         # Step 1: Find contours of the "1" shape
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
-        if contours.__len__() == 0:
+        # If there are contours, merge them
+        if len(contours) == 0:
             ori_bb_height = mask.shape[0]
             ori_bb_width = mask.shape[1]
         else:
-            # Assume there is only one shape of interest
-            contour = contours[0]
-            # Step 2: Calculate the bounding box (x, y, width, height)
-            _, _, ori_bb_width, ori_bb_height = cv2.boundingRect(contour)
+            x_min, y_min, x_max, y_max = float('inf'), float('inf'), 0, 0
+
+            # Iterate over each contour and compute its bounding rectangle
+            for contour in contours:
+                x, y, w, h = cv2.boundingRect(contour)
+                x_min = min(x_min, x)
+                y_min = min(y_min, y)
+                x_max = max(x_max, x + w)
+                y_max = max(y_max, y + h)
+
+            ori_x, ori_y, ori_bb_width, ori_bb_height = (x_min, y_min, x_max - x_min, y_max - y_min)
+        
         patch_type_set = ["1:1","3:4","9:16"]
         vertical_ratio = [1/1,3/4,9/16]
         vertical_ratio = [round(ratio, 2) for ratio in vertical_ratio]
@@ -186,16 +195,16 @@ class CreateContextWindow:
 
                 # Alternatively, using OpenCV (if your mask is not binary, i.e., has non-1/0 values):
                 mask = cv2.convertScaleAbs(mask)
-                if output_length % 64 != 0:
-                        output_length = output_length - (output_length % 64)
-                output_length, patch_mode, target_width, target_height = get_target_width_height(image, output_length, patch_mode, patch_type)
                 
-                image_height, image_width, _ = image.shape
                 # Step 1: Find contours of the "1" shape
                 contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             else:
                 raise NotImplementedError("input_mask must be a tensor")
-        
+        if output_length % 64 != 0:
+            output_length = output_length - (output_length % 64)
+        output_length, patch_mode, target_width, target_height = get_target_width_height(image, output_length, patch_mode, patch_type)
+            
+        image_height, image_width, _ = image.shape
         
         if input_mask is None or np.all(mask == 0) or contours[0] is None:
             print("Mask is not found. Return original image with mask all ones")
@@ -210,9 +219,28 @@ class CreateContextWindow:
             return (image1, image1_mask, patch_mode, 0, 0, 1, image1, image1_mask, )
         
         # Assume there is only one shape of interest
-        contour = contours[0]
-        # Step 2: Calculate the bounding box (x, y, width, height)
-        ori_x, ori_y, ori_bb_width, ori_bb_height = cv2.boundingRect(contour)
+        # contour = contours[0]
+        # # Step 2: Calculate the bounding box (x, y, width, height)
+        # ori_x, ori_y, ori_bb_width, ori_bb_height = cv2.boundingRect(contour)
+        # If there are contours, merge them
+        if len(contours) == 0:
+            ori_x = 0
+            ori_y = 0
+            ori_bb_height = image1.shape[0]
+            ori_bb_width = image1.shape[1]
+        else:
+            # Initialize variables to store the combined bounding rectangle
+            x_min, y_min, x_max, y_max = float('inf'), float('inf'), 0, 0
+
+            # Iterate over each contour and compute its bounding rectangle
+            for contour in contours:
+                x, y, w, h = cv2.boundingRect(contour)
+                x_min = min(x_min, x)
+                y_min = min(y_min, y)
+                x_max = max(x_max, x + w)
+                y_max = max(y_max, y + h)
+
+            ori_x, ori_y, ori_bb_width, ori_bb_height = (x_min, y_min, x_max - x_min, y_max - y_min)
         
         # get center of the bounding box
         center_x, center_y = ori_x + ori_bb_width // 2, ori_y + ori_bb_height // 2
