@@ -281,54 +281,56 @@ class CreateContextWindow:
         new_x = int(center_x - crop_image_width // 2)
         new_y = int(center_y - crop_image_height // 2)
         
+        x_diff = 0
+        y_diff = 0
         if new_y+crop_image_height > image_height:
             new_y = image_height - crop_image_height
         if new_x+crop_image_width > image_width:
             new_x = image_width - crop_image_width
         if new_x < 0:
-            diff = abs(new_x)
+            x_diff = abs(new_x)
             # reset new_y
             new_x = 0
-            crop_image_width = crop_image_width - diff
-            # recal crop_image_height
-            if patch_mode == "patch_bottom":
-                patch_mode = "patch_bottom"
-                crop_output_length = int(crop_image_width / long_part * total)
-                crop_image_height = int(crop_output_length / total * short_part)
-            else:
-                patch_mode = "patch_right"
-                crop_output_length = int(crop_image_width / short_part * total)
-                crop_image_height = int(crop_output_length / total * long_part)
         if new_y < 0:
-            diff = abs(new_y)
+            y_diff = abs(new_y)
             # reset new_y
             new_y = 0
-            crop_image_height = crop_image_height - diff
-            # recal crop_image_width
-            if patch_mode == "patch_bottom":
-                crop_output_length = int(crop_image_height / short_part * total)
-                crop_image_width = int(crop_output_length / total * long_part)
-            else:
-                crop_output_length = int(crop_image_height / long_part * total)
-                crop_image_width = int(crop_output_length / total * short_part)
+        print("x_diff,y_diff",x_diff,y_diff)
             
         fit_image_part = image[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
         fit_mask_part = mask[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
+            
+        up_scale = (crop_image_height + y_diff) / target_height
+        # create a black image with the desired width and height
+        # blank_image = create_image_from_color(fit_image_part.shape[1] + x_diff, fit_image_part.shape[0] + y_diff, "#000000")
         
-        up_scale = crop_image_width / target_width
+        blank_image = np.zeros((fit_image_part.shape[0] + y_diff, fit_image_part.shape[1] + x_diff, fit_image_part.shape[2]), dtype=fit_image_part.dtype)
+        print("fit_image_part",fit_image_part.shape)
+        # asign the crop_image_part to the black_image
+        blank_image[:fit_image_part.shape[0],:fit_image_part.shape[1],:] = fit_image_part
+        print("blank_image",blank_image.shape)
+        # crop_image_part = np.concatenate((black_image, crop_image_part), axis=1)
+        # also resize the mask
+        # create zeros mask with the desired width and height without method
+        empty_mask_part = np.zeros((fit_image_part.shape[0] + y_diff, fit_image_part.shape[1] + x_diff), dtype=np.uint8)
+        print("fit_mask_part",fit_mask_part.shape)
+        empty_mask_part[:fit_image_part.shape[0],:fit_image_part.shape[1]] = fit_mask_part
+        print("fit_mask_part",fit_mask_part.shape)
         
-        resized_image_part = resize(fit_image_part, (target_width,target_height))
-        resized_mask_part = resize(fit_mask_part, (target_width,target_height), cv2.INTER_NEAREST_EXACT)
+        
+        
+        resized_image_part = resize(blank_image, (target_width,target_height))
+        resized_mask_part = resize(empty_mask_part, (target_width,target_height), cv2.INTER_NEAREST_EXACT)
         
         resized_image_part = np.clip(255. * resized_image_part, 0, 255).astype(np.float32) / 255.0
         resized_image_part = torch.from_numpy(resized_image_part)[None,]
         resized_mask_part = torch.from_numpy(resized_mask_part)[None,]
         
-        fit_image_part = np.clip(255. * fit_image_part, 0, 255).astype(np.float32) / 255.0
-        fit_image_part = torch.from_numpy(fit_image_part)[None,]
-        fit_mask_part = torch.from_numpy(fit_mask_part)[None,]
+        blank_image = np.clip(255. * blank_image, 0, 255).astype(np.float32) / 255.0
+        blank_image = torch.from_numpy(blank_image)[None,]
+        empty_mask_part = torch.from_numpy(empty_mask_part)[None,]
         
-        return (resized_image_part, resized_mask_part, patch_mode, new_x, new_y, up_scale, fit_image_part, fit_mask_part, )
+        return (resized_image_part, resized_mask_part, patch_mode, new_x, new_y, up_scale, blank_image, empty_mask_part, )
 def fit_image(image,mask=None,output_length=1536,patch_mode="auto",patch_type="3:4",target_width=None,target_height=None):
     if torch.is_tensor(image):
         image = image.detach().cpu().numpy()
