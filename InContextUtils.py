@@ -253,17 +253,17 @@ class CreateContextWindow:
         
         # get center of the bounding box
         center_x, center_y = ori_x + ori_bb_width // 2, ori_y + ori_bb_height // 2
-        print("center_x, center_y", center_x, center_y)
+        # print("center_x, center_y", center_x, center_y)
         
         ori_x_with_buffer = ori_x - pixel_buffer//2
         ori_y_with_buffer = ori_y - pixel_buffer//2
         buffer_bb_width = ori_bb_width + pixel_buffer
         buffer_bb_height = ori_bb_height + pixel_buffer
         
-        print("image_width, image_height", image_width, image_height)
-        print("pixel_buffer", pixel_buffer)
-        print("ori_x_with_buffer, ori_y_with_buffer", ori_x_with_buffer, ori_y_with_buffer)
-        print("buffer_bb_width, buffer_bb_height", buffer_bb_width, buffer_bb_height)
+        # print("image_width, image_height", image_width, image_height)
+        # print("pixel_buffer", pixel_buffer)
+        # print("ori_x_with_buffer, ori_y_with_buffer", ori_x_with_buffer, ori_y_with_buffer)
+        # print("buffer_bb_width, buffer_bb_height", buffer_bb_width, buffer_bb_height)
         if ori_x+buffer_bb_width > image_width:
             ori_x_with_buffer = image_width - buffer_bb_width
         if ori_y+buffer_bb_height > image_height:
@@ -274,12 +274,12 @@ class CreateContextWindow:
             # reset new_y
             ori_x_with_buffer = 0
             if (x_diff + buffer_bb_width) <= image_width:
-                print("add x_diff",x_diff)
+                # print("add x_diff",x_diff)
             #     # print("adjust image width",crop_image_width)
                 buffer_bb_width += x_diff
                 x_diff = 0
             else:
-                print("buffer_bb_width,image_width",buffer_bb_width,image_width)
+                # print("buffer_bb_width,image_width",buffer_bb_width,image_width)
                 x_diff = (x_diff + buffer_bb_width) - image_width
                 buffer_bb_width = image_width
             #     # print("adjust image width with x diff",crop_image_width)
@@ -299,11 +299,11 @@ class CreateContextWindow:
             # reset new_y
             ori_y_with_buffer = 0
             if (y_diff + buffer_bb_height) <= image_height:
-                print("add y_diff",y_diff)
+                # print("add y_diff",y_diff)
                 buffer_bb_height += y_diff
                 y_diff = 0
             else:
-                print("buffer_bb_height,image_height",buffer_bb_height,image_height)
+                # print("buffer_bb_height,image_height",buffer_bb_height,image_height)
                 y_diff = (y_diff + buffer_bb_height) - image_height
                 buffer_bb_height = image_height
             #     # print("adjust image height",crop_image_height)
@@ -334,12 +334,12 @@ class CreateContextWindow:
         # print("ori_x_with_buffer, ori_y_with_buffer", ori_x_with_buffer, ori_y_with_buffer)
         # buffer_bb_width = min(int(ori_bb_width + pixel_buffer), image_width)
         # buffer_bb_height = min(int(ori_bb_height + pixel_buffer), image_height)
-        print("buffer_bb_width, buffer_bb_height", buffer_bb_width, buffer_bb_height)
+        # print("buffer_bb_width, buffer_bb_height", buffer_bb_width, buffer_bb_height)
         crop_image_part = image[ori_y_with_buffer:ori_y_with_buffer + buffer_bb_height, ori_x_with_buffer:ori_x_with_buffer + buffer_bb_width]
         crop_mask_part = mask[ori_y_with_buffer:ori_y_with_buffer + buffer_bb_height, ori_x_with_buffer:ori_x_with_buffer + buffer_bb_width]
         
         crop_image_height, crop_image_width, _ = crop_image_part.shape
-        print("ori crop_image_width, crop_image_height", crop_image_width, crop_image_height)
+        # print("ori crop_image_width, crop_image_height", crop_image_width, crop_image_height)
         
         if crop_image_width >= crop_image_height:
             if patch_mode == "patch_bottom":
@@ -368,21 +368,21 @@ class CreateContextWindow:
             new_y = image_height - crop_image_height
         if new_x+crop_image_width > image_width:
             new_x = image_width - crop_image_width
-        print("new_x,new_y",new_x,new_y)
-        print("x_diff,y_diff",x_diff,y_diff)
-        print("crop_image_width,crop_image_height",crop_image_width,crop_image_height)
-        print("image_width,image_height",image_width,image_height)
+        # print("new_x,new_y",new_x,new_y)
+        # print("x_diff,y_diff",x_diff,y_diff)
+        # print("crop_image_width,crop_image_height",crop_image_width,crop_image_height)
+        # print("image_width,image_height",image_width,image_height)
         if new_x < 0:
             x_diff = abs(new_x)
             # reset new_y
             new_x = 0
             if (x_diff + crop_image_width) <= image_width:
-                print("add x_diff",x_diff)
+                # print("add x_diff",x_diff)
             #     # print("adjust image width",crop_image_width)
                 crop_image_width += x_diff
                 x_diff = 0
             else:
-                print("crop_image_width,image_width",crop_image_width,image_width)
+                # print("crop_image_width,image_width",crop_image_width,image_width)
                 x_diff = (x_diff + crop_image_width) - image_width
                 crop_image_width = image_width
             #     # print("adjust image width with x diff",crop_image_width)
@@ -402,11 +402,11 @@ class CreateContextWindow:
             # reset new_y
             new_y = 0
             if (y_diff + crop_image_height) <= image_height:
-                print("add y_diff",y_diff)
+                # print("add y_diff",y_diff)
                 crop_image_height += y_diff
                 y_diff = 0
             else:
-                print("crop_image_height,image_height",crop_image_height,image_height)
+                # print("crop_image_height,image_height",crop_image_height,image_height)
                 y_diff = (y_diff + crop_image_height) - image_height
                 crop_image_height = image_height
             #     # print("adjust image height",crop_image_height)
@@ -432,7 +432,7 @@ class CreateContextWindow:
             crop_image_height = image_height
             new_y = 0
             
-        print("crop_image_width,crop_image_height",crop_image_width,crop_image_height)
+        # print("crop_image_width,crop_image_height",crop_image_width,crop_image_height)
         fit_image_part = image[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
         fit_mask_part = mask[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
             
