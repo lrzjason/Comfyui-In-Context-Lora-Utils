@@ -34,6 +34,7 @@ To make the workflow functional, ensure the following files are downloaded and p
 
 
 ## Change Logs:
+- **2024-12-10:** Avoid padding when image have width or height to extend the context area
 - **2024-12-05:** Fix incorrect cropping issue when mask is not fit in target ratio
 - **2024-12-01:** Adjust contours calculation, fix multiple contour only produce single contour issue
 - **2024-11-30:** Add AutoPatch node, it is able to automatically select patch mode and patch type

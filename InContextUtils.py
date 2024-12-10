@@ -291,11 +291,21 @@ class CreateContextWindow:
             x_diff = abs(new_x)
             # reset new_y
             new_x = 0
+            if (x_diff + crop_image_width) < image_width:
+                # print("adjust image width",crop_image_width)
+                crop_image_width += x_diff
+                # print("adjust image width with x diff",crop_image_width)
+                x_diff = 0
         if new_y < 0:
             y_diff = abs(new_y)
             # reset new_y
             new_y = 0
-        print("x_diff,y_diff",x_diff,y_diff)
+            if (y_diff + crop_image_height) < image_height:
+                # print("adjust image height",crop_image_height)
+                crop_image_height += y_diff
+                # print("adjust image height with y diff",crop_image_height)
+                y_diff = 0
+        # print("x_diff,y_diff",x_diff,y_diff)
             
         fit_image_part = image[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
         fit_mask_part = mask[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
@@ -305,17 +315,17 @@ class CreateContextWindow:
         # blank_image = create_image_from_color(fit_image_part.shape[1] + x_diff, fit_image_part.shape[0] + y_diff, "#000000")
         
         blank_image = np.zeros((fit_image_part.shape[0] + y_diff, fit_image_part.shape[1] + x_diff, fit_image_part.shape[2]), dtype=fit_image_part.dtype)
-        print("fit_image_part",fit_image_part.shape)
+        # print("fit_image_part",fit_image_part.shape)
         # asign the crop_image_part to the black_image
         blank_image[:fit_image_part.shape[0],:fit_image_part.shape[1],:] = fit_image_part
-        print("blank_image",blank_image.shape)
+        # print("blank_image",blank_image.shape)
         # crop_image_part = np.concatenate((black_image, crop_image_part), axis=1)
         # also resize the mask
         # create zeros mask with the desired width and height without method
         empty_mask_part = np.zeros((fit_image_part.shape[0] + y_diff, fit_image_part.shape[1] + x_diff), dtype=np.uint8)
-        print("fit_mask_part",fit_mask_part.shape)
+        # print("fit_mask_part",fit_mask_part.shape)
         empty_mask_part[:fit_image_part.shape[0],:fit_image_part.shape[1]] = fit_mask_part
-        print("fit_mask_part",fit_mask_part.shape)
+        # print("fit_mask_part",fit_mask_part.shape)
         
         
         
