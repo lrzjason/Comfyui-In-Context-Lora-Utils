@@ -86,6 +86,7 @@ class AutoPatch:
 
             ori_x, ori_y, ori_bb_width, ori_bb_height = (x_min, y_min, x_max - x_min, y_max - y_min)
         
+        print("ori_bb_width, ori_bb_height",ori_bb_width, ori_bb_height)
         patch_type_set = ["1:1","3:4","9:16"]
         vertical_ratio = [1/1,3/4,9/16]
         vertical_ratio = [round(ratio, 2) for ratio in vertical_ratio]
@@ -94,6 +95,7 @@ class AutoPatch:
         
         target_ratio = vertical_ratio
         mask_ratio = round(ori_bb_width / ori_bb_height, 2)
+        print("target_ratio, mask_ratio",target_ratio, mask_ratio)
         if ori_bb_height > ori_bb_width:
             patch_mode = "patch_right"
             closest_ratio = min(target_ratio, key=lambda x: abs(x - mask_ratio))
@@ -103,6 +105,8 @@ class AutoPatch:
             closest_ratio = min(target_ratio, key=lambda x: abs(x - mask_ratio))
         # Find the closest vertical ratio
         patch_type = patch_type_set[target_ratio.index(closest_ratio)]
+        
+        print("patch_mode, patch_type",patch_mode, patch_type)
         return (patch_mode, patch_type, )
 
 
@@ -218,6 +222,11 @@ class CreateContextWindow:
             image1_mask = torch.from_numpy(image1_mask)[None,]
             return (image1, image1_mask, patch_mode, 0, 0, 1, image1, image1_mask, )
         
+        
+        patch_ratio = [int(x) for x in patch_type.split(":")]
+        short_part = patch_ratio[0]
+        long_part = patch_ratio[1]
+        total = short_part * 2
         # Assume there is only one shape of interest
         # contour = contours[0]
         # # Step 2: Calculate the bounding box (x, y, width, height)
@@ -244,19 +253,91 @@ class CreateContextWindow:
         
         # get center of the bounding box
         center_x, center_y = ori_x + ori_bb_width // 2, ori_y + ori_bb_height // 2
-        # print("center_x, center_y", center_x, center_y)
+        print("center_x, center_y", center_x, center_y)
         
-        ori_x_with_buffer = max(int(ori_x - pixel_buffer//2), 0)
-        ori_y_with_buffer = max(int(ori_y - pixel_buffer//2), 0)
-        buffer_bb_width = min(int(ori_bb_width + pixel_buffer), image_width)
-        buffer_bb_height = min(int(ori_bb_height + pixel_buffer), image_height)
+        ori_x_with_buffer = ori_x - pixel_buffer//2
+        ori_y_with_buffer = ori_y - pixel_buffer//2
+        buffer_bb_width = ori_bb_width + pixel_buffer
+        buffer_bb_height = ori_bb_height + pixel_buffer
+        
+        print("image_width, image_height", image_width, image_height)
+        print("pixel_buffer", pixel_buffer)
+        print("ori_x_with_buffer, ori_y_with_buffer", ori_x_with_buffer, ori_y_with_buffer)
+        print("buffer_bb_width, buffer_bb_height", buffer_bb_width, buffer_bb_height)
+        if ori_x+buffer_bb_width > image_width:
+            ori_x_with_buffer = image_width - buffer_bb_width
+        if ori_y+buffer_bb_height > image_height:
+            ori_y_with_buffer = image_height - buffer_bb_height
+        
+        if ori_x_with_buffer < 0:
+            x_diff = abs(ori_x_with_buffer)
+            # reset new_y
+            ori_x_with_buffer = 0
+            if (x_diff + buffer_bb_width) <= image_width:
+                print("add x_diff",x_diff)
+            #     # print("adjust image width",crop_image_width)
+                buffer_bb_width += x_diff
+                x_diff = 0
+            else:
+                print("buffer_bb_width,image_width",buffer_bb_width,image_width)
+                x_diff = (x_diff + buffer_bb_width) - image_width
+                buffer_bb_width = image_width
+            #     # print("adjust image width with x diff",crop_image_width)
+            #     x_diff = 0
+            
+            # due to update crop_image_width, recalculate crop_image_height
+            if patch_mode == "patch_bottom":
+                buffer_bb_output_length = int(buffer_bb_width / long_part * total)
+                buffer_bb_height = int(buffer_bb_output_length / total * short_part)
+            else:
+                patch_mode = "patch_right"
+                buffer_bb_output_length = int(buffer_bb_width / short_part * total)
+                buffer_bb_height = int(buffer_bb_output_length / total * long_part)
+            
+        if ori_y_with_buffer < 0:
+            y_diff = abs(ori_y_with_buffer)
+            # reset new_y
+            ori_y_with_buffer = 0
+            if (y_diff + buffer_bb_height) <= image_height:
+                print("add y_diff",y_diff)
+                buffer_bb_height += y_diff
+                y_diff = 0
+            else:
+                print("buffer_bb_height,image_height",buffer_bb_height,image_height)
+                y_diff = (y_diff + buffer_bb_height) - image_height
+                buffer_bb_height = image_height
+            #     # print("adjust image height",crop_image_height)
+            #     crop_image_height += y_diff
+            #     # print("adjust image height with y diff",crop_image_height)
+            #     y_diff = 0
+            if patch_mode == "patch_bottom":
+                buffer_bb_output_length = int(buffer_bb_height / short_part * total)
+                buffer_bb_width = int(buffer_bb_output_length / total * long_part)
+            else:
+                patch_mode = "patch_right"
+                buffer_bb_output_length = int(buffer_bb_height / long_part * total)
+                buffer_bb_width = int(buffer_bb_output_length / total * short_part)
+        
+        if buffer_bb_width > image_width:
+            # for black image padding
+            x_diff = buffer_bb_width - image_width
+            crop_image_width = image_width
+            ori_x_with_buffer = 0
+        elif buffer_bb_height > image_height:
+            # for black image padding
+            y_diff = buffer_bb_height - image_height
+            buffer_bb_height = image_height
+            ori_y_with_buffer = 0
+        
+        # ori_x_with_buffer = max(int(ori_x - pixel_buffer//2), 0)
+        # ori_y_with_buffer = max(int(ori_y - pixel_buffer//2), 0)
+        # print("ori_x_with_buffer, ori_y_with_buffer", ori_x_with_buffer, ori_y_with_buffer)
+        # buffer_bb_width = min(int(ori_bb_width + pixel_buffer), image_width)
+        # buffer_bb_height = min(int(ori_bb_height + pixel_buffer), image_height)
+        print("buffer_bb_width, buffer_bb_height", buffer_bb_width, buffer_bb_height)
         crop_image_part = image[ori_y_with_buffer:ori_y_with_buffer + buffer_bb_height, ori_x_with_buffer:ori_x_with_buffer + buffer_bb_width]
         crop_mask_part = mask[ori_y_with_buffer:ori_y_with_buffer + buffer_bb_height, ori_x_with_buffer:ori_x_with_buffer + buffer_bb_width]
         
-        patch_ratio = [int(x) for x in patch_type.split(":")]
-        short_part = patch_ratio[0]
-        long_part = patch_ratio[1]
-        total = short_part * 2
         crop_image_height, crop_image_width, _ = crop_image_part.shape
         print("ori crop_image_width, crop_image_height", crop_image_width, crop_image_height)
         
