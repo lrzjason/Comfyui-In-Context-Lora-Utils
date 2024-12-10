@@ -258,7 +258,7 @@ class CreateContextWindow:
         long_part = patch_ratio[1]
         total = short_part * 2
         crop_image_height, crop_image_width, _ = crop_image_part.shape
-        # print("ori crop_image_width, crop_image_height", crop_image_width, crop_image_height)
+        print("ori crop_image_width, crop_image_height", crop_image_width, crop_image_height)
         
         if crop_image_width >= crop_image_height:
             if patch_mode == "patch_bottom":
@@ -292,30 +292,69 @@ class CreateContextWindow:
         print("crop_image_width,crop_image_height",crop_image_width,crop_image_height)
         print("image_width,image_height",image_width,image_height)
         if new_x < 0:
-            # x_diff = abs(new_x)
+            x_diff = abs(new_x)
             # reset new_y
             new_x = 0
-            crop_image_width = image_width
-            # if (x_diff + crop_image_width) < image_width:
+            if (x_diff + crop_image_width) <= image_width:
+                print("add x_diff",x_diff)
             #     # print("adjust image width",crop_image_width)
-            #     crop_image_width += x_diff
+                crop_image_width += x_diff
+                x_diff = 0
+            else:
+                print("crop_image_width,image_width",crop_image_width,image_width)
+                x_diff = (x_diff + crop_image_width) - image_width
+                crop_image_width = image_width
             #     # print("adjust image width with x diff",crop_image_width)
             #     x_diff = 0
+            
+            # due to update crop_image_width, recalculate crop_image_height
+            if patch_mode == "patch_bottom":
+                crop_output_length = int(crop_image_width / long_part * total)
+                crop_image_height = int(crop_output_length / total * short_part)
+            else:
+                patch_mode = "patch_right"
+                crop_output_length = int(crop_image_width / short_part * total)
+                crop_image_height = int(crop_output_length / total * long_part)
+            
         if new_y < 0:
-            # y_diff = abs(new_y)
+            y_diff = abs(new_y)
             # reset new_y
             new_y = 0
-            crop_image_height = image_height
-            # if (y_diff + crop_image_height) < image_height:
+            if (y_diff + crop_image_height) <= image_height:
+                print("add y_diff",y_diff)
+                crop_image_height += y_diff
+                y_diff = 0
+            else:
+                print("crop_image_height,image_height",crop_image_height,image_height)
+                y_diff = (y_diff + crop_image_height) - image_height
+                crop_image_height = image_height
             #     # print("adjust image height",crop_image_height)
             #     crop_image_height += y_diff
             #     # print("adjust image height with y diff",crop_image_height)
             #     y_diff = 0
+            if patch_mode == "patch_bottom":
+                crop_output_length = int(crop_image_height / short_part * total)
+                crop_image_width = int(crop_output_length / total * long_part)
+            else:
+                patch_mode = "patch_right"
+                crop_output_length = int(crop_image_height / long_part * total)
+                crop_image_width = int(crop_output_length / total * short_part)
+        
+        if crop_image_width > image_width:
+            # for black image padding
+            x_diff = crop_image_width - image_width
+            crop_image_width = image_width
+            new_x = 0
+        elif crop_image_height > image_height:
+            # for black image padding
+            y_diff = crop_image_height - image_height
+            crop_image_height = image_height
+            new_y = 0
             
+        print("crop_image_width,crop_image_height",crop_image_width,crop_image_height)
         fit_image_part = image[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
         fit_mask_part = mask[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
             
-        up_scale = (crop_image_height + y_diff) / target_height
         # create a black image with the desired width and height
         # blank_image = create_image_from_color(fit_image_part.shape[1] + x_diff, fit_image_part.shape[0] + y_diff, "#000000")
         
@@ -332,7 +371,7 @@ class CreateContextWindow:
         empty_mask_part[:fit_image_part.shape[0],:fit_image_part.shape[1]] = fit_mask_part
         # print("fit_mask_part",fit_mask_part.shape)
         
-        
+        up_scale = (fit_image_part.shape[0] + y_diff) / target_height
         
         resized_image_part = resize(blank_image, (target_width,target_height))
         resized_mask_part = resize(empty_mask_part, (target_width,target_height), cv2.INTER_NEAREST_EXACT)
