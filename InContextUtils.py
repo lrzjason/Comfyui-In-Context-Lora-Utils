@@ -287,25 +287,30 @@ class CreateContextWindow:
             new_y = image_height - crop_image_height
         if new_x+crop_image_width > image_width:
             new_x = image_width - crop_image_width
+        print("new_x,new_y",new_x,new_y)
+        print("x_diff,y_diff",x_diff,y_diff)
+        print("crop_image_width,crop_image_height",crop_image_width,crop_image_height)
+        print("image_width,image_height",image_width,image_height)
         if new_x < 0:
-            x_diff = abs(new_x)
+            # x_diff = abs(new_x)
             # reset new_y
             new_x = 0
-            if (x_diff + crop_image_width) < image_width:
-                # print("adjust image width",crop_image_width)
-                crop_image_width += x_diff
-                # print("adjust image width with x diff",crop_image_width)
-                x_diff = 0
+            crop_image_width = image_width
+            # if (x_diff + crop_image_width) < image_width:
+            #     # print("adjust image width",crop_image_width)
+            #     crop_image_width += x_diff
+            #     # print("adjust image width with x diff",crop_image_width)
+            #     x_diff = 0
         if new_y < 0:
-            y_diff = abs(new_y)
+            # y_diff = abs(new_y)
             # reset new_y
             new_y = 0
-            if (y_diff + crop_image_height) < image_height:
-                # print("adjust image height",crop_image_height)
-                crop_image_height += y_diff
-                # print("adjust image height with y diff",crop_image_height)
-                y_diff = 0
-        # print("x_diff,y_diff",x_diff,y_diff)
+            crop_image_height = image_height
+            # if (y_diff + crop_image_height) < image_height:
+            #     # print("adjust image height",crop_image_height)
+            #     crop_image_height += y_diff
+            #     # print("adjust image height with y diff",crop_image_height)
+            #     y_diff = 0
             
         fit_image_part = image[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
         fit_mask_part = mask[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
