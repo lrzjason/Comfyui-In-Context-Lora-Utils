@@ -355,7 +355,7 @@ class CreateContextWindow:
         else:
             crop_image_width = expected_width
             
-        if expected_width > image_width:
+        if expected_height > image_height:
             y_diff = expected_height - crop_image_height
             crop_image_height = image_height
         else:
