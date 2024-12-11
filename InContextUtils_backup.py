@@ -260,10 +260,10 @@ class CreateContextWindow:
         buffer_bb_width = ori_bb_width + pixel_buffer
         buffer_bb_height = ori_bb_height + pixel_buffer
         
-        # print("===debug===")
-        # print("pixel_buffer", pixel_buffer)
-        # print("ori_x_with_buffer, ori_y_with_buffer", ori_x_with_buffer, ori_y_with_buffer)
-        # print("buffer_bb_width, buffer_bb_height", buffer_bb_width, buffer_bb_height)
+        print("===debug===")
+        print("pixel_buffer", pixel_buffer)
+        print("ori_x_with_buffer, ori_y_with_buffer", ori_x_with_buffer, ori_y_with_buffer)
+        print("buffer_bb_width, buffer_bb_height", buffer_bb_width, buffer_bb_height)
         if ori_x+buffer_bb_width > image_width:
             ori_x_with_buffer = image_width - buffer_bb_width
         if ori_y+buffer_bb_height > image_height:
@@ -274,11 +274,18 @@ class CreateContextWindow:
             # reset new_y
             ori_x_with_buffer = 0
             if (x_diff + buffer_bb_width) <= image_width:
+                # print("add x_diff",x_diff)
+            #     # print("adjust image width",crop_image_width)
                 buffer_bb_width += x_diff
                 x_diff = 0
             else:
+                # print("buffer_bb_width,image_width",buffer_bb_width,image_width)
                 x_diff = (x_diff + buffer_bb_width) - image_width
                 buffer_bb_width = image_width
+            #     # print("adjust image width with x diff",crop_image_width)
+            #     x_diff = 0
+            
+            # due to update crop_image_width, recalculate crop_image_height
             if patch_mode == "patch_bottom":
                 buffer_bb_output_length = int(buffer_bb_width / long_part * total)
                 buffer_bb_height = int(buffer_bb_output_length / total * short_part)
@@ -292,11 +299,17 @@ class CreateContextWindow:
             # reset new_y
             ori_y_with_buffer = 0
             if (y_diff + buffer_bb_height) <= image_height:
+                # print("add y_diff",y_diff)
                 buffer_bb_height += y_diff
                 y_diff = 0
             else:
+                # print("buffer_bb_height,image_height",buffer_bb_height,image_height)
                 y_diff = (y_diff + buffer_bb_height) - image_height
                 buffer_bb_height = image_height
+            #     # print("adjust image height",crop_image_height)
+            #     crop_image_height += y_diff
+            #     # print("adjust image height with y diff",crop_image_height)
+            #     y_diff = 0
             if patch_mode == "patch_bottom":
                 buffer_bb_output_length = int(buffer_bb_height / short_part * total)
                 buffer_bb_width = int(buffer_bb_output_length / total * long_part)
@@ -316,15 +329,22 @@ class CreateContextWindow:
             buffer_bb_height = image_height
             ori_y_with_buffer = 0
         
-        # print("After adjust", image_width, image_height)
-        # print("image_width, image_height", image_width, image_height)
-        # print("pixel_buffer", pixel_buffer)
+        print("After adjust", image_width, image_height)
+        print("image_width, image_height", image_width, image_height)
+        print("pixel_buffer", pixel_buffer)
+        print("ori_x_with_buffer, ori_y_with_buffer", ori_x_with_buffer, ori_y_with_buffer)
+        print("buffer_bb_width, buffer_bb_height", buffer_bb_width, buffer_bb_height)
+        # ori_x_with_buffer = max(int(ori_x - pixel_buffer//2), 0)
+        # ori_y_with_buffer = max(int(ori_y - pixel_buffer//2), 0)
         # print("ori_x_with_buffer, ori_y_with_buffer", ori_x_with_buffer, ori_y_with_buffer)
+        # buffer_bb_width = min(int(ori_bb_width + pixel_buffer), image_width)
+        # buffer_bb_height = min(int(ori_bb_height + pixel_buffer), image_height)
         # print("buffer_bb_width, buffer_bb_height", buffer_bb_width, buffer_bb_height)
         crop_image_part = image[ori_y_with_buffer:ori_y_with_buffer + buffer_bb_height, ori_x_with_buffer:ori_x_with_buffer + buffer_bb_width]
         crop_mask_part = mask[ori_y_with_buffer:ori_y_with_buffer + buffer_bb_height, ori_x_with_buffer:ori_x_with_buffer + buffer_bb_width]
         
         crop_image_height, crop_image_width, _ = crop_image_part.shape
+        # # print("ori crop_image_width, crop_image_height", crop_image_width, crop_image_height)
         
         fit_image_part = crop_image_part
         fit_mask_part = crop_mask_part
@@ -347,8 +367,8 @@ class CreateContextWindow:
                 patch_mode = "patch_right"
                 expected_width = int(crop_image_height / long_part * short_part)
         
-        # print('expected_width,expected_height', expected_width,expected_height)
-        # print('crop_image_width,crop_image_height', crop_image_width,crop_image_height)
+        print('expected_width,expected_height', expected_width,expected_height)
+        print('crop_image_width,crop_image_height', crop_image_width,crop_image_height)
         if expected_width > image_width:
             x_diff = expected_width - crop_image_width
             crop_image_width = image_width
@@ -363,17 +383,160 @@ class CreateContextWindow:
             
         new_x = max(int(center_x - crop_image_width // 2),0)
         new_y = max(int(center_y - crop_image_height // 2),0)
-        # print("new_x, new_y", new_x, new_y)
+        print("new_x, new_y", new_x, new_y)
         fit_image_part = image[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
         fit_mask_part = mask[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
             
+        # if crop_image_width >= crop_image_height:
+        #     if patch_mode == "patch_bottom":
+        #         crop_output_length = int(crop_image_width / long_part * total)
+        #         crop_image_height = int(crop_output_length / total * short_part)
+        #     else:
+        #         patch_mode = "patch_right"
+        #         crop_output_length = int(crop_image_width / short_part * total)
+        #         crop_image_height = int(crop_output_length / total * long_part)
+        # else:
+        #     if patch_mode == "patch_bottom":
+        #         crop_output_length = int(crop_image_height / short_part * total)
+        #         crop_image_width = int(crop_output_length / total * long_part)
+        #     else:
+        #         patch_mode = "patch_right"
+        #         crop_output_length = int(crop_image_height / long_part * total)
+        #         crop_image_width = int(crop_output_length / total * short_part)
+        
+        # # based on center x,y and crop image width, calculate the x,y offset
+        
+        # x_diff = 0
+        # y_diff = 0
+        # if new_y+crop_image_height > image_height:
+        #     new_y = image_height - crop_image_height
+        # if new_x+crop_image_width > image_width:
+        #     new_x = image_width - crop_image_width
+        # print("After crop")
+        # print("new_x,new_y",new_x,new_y)
+        # print("x_diff,y_diff",x_diff,y_diff)
+        # print("crop_image_width,crop_image_height",crop_image_width,crop_image_height)
+        # print("image_width,image_height",image_width,image_height)
+        # print("new_x < 0",new_x < 0)
+        # if new_x < 0:
+        #     x_diff = abs(new_x)
+        #     # reset new_y
+        #     new_x = 0
+        #     print("x_diff",x_diff)
+        #     print("crop_image_width",crop_image_width)
+        #     print("image_width",image_width)
+        #     print("(x_diff + crop_image_width) <= image_width",(x_diff + crop_image_width) <= image_width)
+        #     if crop_image_width / crop_image_height == target_width / target_height:
+        #         x_diff = 0
+        #     else:
+        #         if (x_diff + crop_image_width) <= image_width:
+        #             # print("add x_diff",x_diff)
+        #         #     # print("adjust image width",crop_image_width)
+        #             crop_image_width += x_diff
+        #             x_diff = 0
+        #         else:
+        #             # print("crop_image_width,image_width",crop_image_width,image_width)
+        #             x_diff = (x_diff + crop_image_width) - image_width
+        #             crop_image_width = image_width
+        #         #     # print("adjust image width with x diff",crop_image_width)
+        #         #     x_diff = 0
+                
+        #         # due to update crop_image_width, recalculate crop_image_height
+        #         if patch_mode == "patch_bottom":
+        #             crop_output_length = int(crop_image_width / long_part * total)
+        #             crop_image_height = int(crop_output_length / total * short_part)
+        #         else:
+        #             patch_mode = "patch_right"
+        #             crop_output_length = int(crop_image_width / short_part * total)
+        #             crop_image_height = int(crop_output_length / total * long_part)
+        # print("new_x < 0")
+        # print("patch_mode")
+        # print("short_part", short_part)
+        # print("long_part", long_part)
+        # print("total", total)
+        # print("crop_output_length", crop_output_length)
+        # print("crop_image_height", crop_image_height)
+            
+        # print("new_y < 0",new_y < 0)
+        # if new_y < 0:
+        #     y_diff = abs(new_y)
+        #     # reset new_y
+        #     new_y = 0
+        #     print("(y_diff + crop_image_height) <= image_height",(y_diff + crop_image_height) <= image_height)
+        #     if crop_image_width / crop_image_height == target_width / target_height:
+        #         y_diff = 0
+        #     else:
+        #         if (y_diff + crop_image_height) <= image_height:
+        #             # print("add y_diff",y_diff)
+        #             crop_image_height += y_diff
+        #             y_diff = 0
+        #         else:
+        #             # print("crop_image_height,image_height",crop_image_height,image_height)
+        #             y_diff = (y_diff + crop_image_height) - image_height
+        #             crop_image_height = image_height
+        #         #     # print("adjust image height",crop_image_height)
+        #         #     crop_image_height += y_diff
+        #         #     # print("adjust image height with y diff",crop_image_height)
+        #         #     y_diff = 0
+        #         if patch_mode == "patch_bottom":
+        #             crop_output_length = int(crop_image_height / short_part * total)
+        #             crop_image_width = int(crop_output_length / total * long_part)
+        #         else:
+        #             patch_mode = "patch_right"
+        #             crop_output_length = int(crop_image_height / long_part * total)
+        #             crop_image_width = int(crop_output_length / total * short_part)
+        #         print("new_y < 0")
+        #         print("patch_mode")
+        #         print("short_part", short_part)
+        #         print("long_part", long_part)
+        #         print("total", total)
+        #         print("crop_output_length", crop_output_length)
+        #         print("crop_image_width", crop_image_width)
+        
+        # print("crop_image_width > image_width", crop_image_width > image_width)
+        # print("crop_image_height > image_height", crop_image_height > image_height)
+        # if crop_image_width > image_width:
+        #     # for black image padding
+        #     x_diff = crop_image_width - image_width
+        #     print("x_diff",  x_diff)
+        #     crop_image_width = image_width
+        #     new_x = 0
+        # elif crop_image_height > image_height:
+        #     # for black image padding
+        #     print("y_diff",  y_diff)
+        #     y_diff = crop_image_height - image_height
+        #     crop_image_height = image_height
+        #     new_y = 0
+            
+        # print("After crop adjust")
+        # print("new_x,new_y",new_x,new_y)
+        # print("x_diff,y_diff",x_diff,y_diff)
+        # print("crop_image_width,crop_image_height",crop_image_width,crop_image_height)
+        # print("image_width,image_height",image_width,image_height)
+        # # print("crop_image_width,crop_image_height",crop_image_width,crop_image_height)
+        # fit_image_part = image[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
+        # fit_mask_part = mask[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
+            
+        # create a black image with the desired width and height
+        # blank_image = create_image_from_color(fit_image_part.shape[1] + x_diff, fit_image_part.shape[0] + y_diff, "#000000")
+        
         blank_image = np.zeros((fit_image_part.shape[0] + y_diff, fit_image_part.shape[1] + x_diff, fit_image_part.shape[2]), dtype=fit_image_part.dtype)
         blank_image[:fit_image_part.shape[0],:fit_image_part.shape[1],:] = fit_image_part
         empty_mask_part = np.zeros((fit_image_part.shape[0] + y_diff, fit_image_part.shape[1] + x_diff), dtype=np.uint8)
         empty_mask_part[:fit_image_part.shape[0],:fit_image_part.shape[1]] = fit_mask_part
+        # blank_image = np.clip(255. * blank_image, 0, 255).astype(np.float32) / 255.0
+        # blank_image = torch.from_numpy(blank_image)[None,]
+        # empty_mask_part = torch.from_numpy(empty_mask_part)[None,]
         
+        # if fit_image_part.shape[0] > target_height:
+        #     up_scale = target_height / fit_image_part.shape[0]
+        # else:
         up_scale = fit_image_part.shape[0] / target_height
             
+        print("fit_image_part.shape[0]", fit_image_part.shape[0])
+        print("target_height", target_height)
+        print("up_scale", up_scale)
+        
         resized_image_part = resize(blank_image, (target_width,target_height))
         resized_mask_part = resize(empty_mask_part, (target_width,target_height), cv2.INTER_NEAREST_EXACT)
         
