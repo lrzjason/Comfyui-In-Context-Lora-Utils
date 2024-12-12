@@ -34,6 +34,7 @@ To make the workflow functional, ensure the following files are downloaded and p
 
 
 ## Change Logs:
+- **2024-12-12(2):** Fix center point calculation when close to edge.
 - **2024-12-12:** Reconstruct the node with new caculation.
 - **2024-12-11:** Avoid too large buffer cause incorrect context area
 - **2024-12-10(3):** Avoid padding when image have width or height to extend the context area

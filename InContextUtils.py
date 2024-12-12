@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import cv2
 
+DEBUG = False
 def resize(img,resolution,interpolation=cv2.INTER_CUBIC):
     return cv2.resize(img,resolution, interpolation=interpolation)
 
@@ -260,10 +261,11 @@ class CreateContextWindow:
         buffer_bb_width = ori_bb_width + pixel_buffer
         buffer_bb_height = ori_bb_height + pixel_buffer
         
-        # print("===debug===")
-        # print("pixel_buffer", pixel_buffer)
-        # print("ori_x_with_buffer, ori_y_with_buffer", ori_x_with_buffer, ori_y_with_buffer)
-        # print("buffer_bb_width, buffer_bb_height", buffer_bb_width, buffer_bb_height)
+        if DEBUG:
+            print("===debug===")
+            print("pixel_buffer", pixel_buffer)
+            print("ori_x_with_buffer, ori_y_with_buffer", ori_x_with_buffer, ori_y_with_buffer)
+            print("buffer_bb_width, buffer_bb_height", buffer_bb_width, buffer_bb_height)
         if ori_x+buffer_bb_width > image_width:
             ori_x_with_buffer = image_width - buffer_bb_width
         if ori_y+buffer_bb_height > image_height:
@@ -316,11 +318,12 @@ class CreateContextWindow:
             buffer_bb_height = image_height
             ori_y_with_buffer = 0
         
-        # print("After adjust", image_width, image_height)
-        # print("image_width, image_height", image_width, image_height)
-        # print("pixel_buffer", pixel_buffer)
-        # print("ori_x_with_buffer, ori_y_with_buffer", ori_x_with_buffer, ori_y_with_buffer)
-        # print("buffer_bb_width, buffer_bb_height", buffer_bb_width, buffer_bb_height)
+        if DEBUG:
+            print("After adjust", image_width, image_height)
+            print("image_width, image_height", image_width, image_height)
+            print("pixel_buffer", pixel_buffer)
+            print("ori_x_with_buffer, ori_y_with_buffer", ori_x_with_buffer, ori_y_with_buffer)
+            print("buffer_bb_width, buffer_bb_height", buffer_bb_width, buffer_bb_height)
         crop_image_part = image[ori_y_with_buffer:ori_y_with_buffer + buffer_bb_height, ori_x_with_buffer:ori_x_with_buffer + buffer_bb_width]
         crop_mask_part = mask[ori_y_with_buffer:ori_y_with_buffer + buffer_bb_height, ori_x_with_buffer:ori_x_with_buffer + buffer_bb_width]
         
@@ -347,8 +350,9 @@ class CreateContextWindow:
                 patch_mode = "patch_right"
                 expected_width = int(crop_image_height / long_part * short_part)
         
-        # print('expected_width,expected_height', expected_width,expected_height)
-        # print('crop_image_width,crop_image_height', crop_image_width,crop_image_height)
+        if DEBUG:
+            print('expected_width,expected_height', expected_width,expected_height)
+            print('crop_image_width,crop_image_height', crop_image_width,crop_image_height)
         if expected_width > image_width:
             x_diff = expected_width - crop_image_width
             crop_image_width = image_width
@@ -360,10 +364,29 @@ class CreateContextWindow:
             crop_image_height = image_height
         else:
             crop_image_height = expected_height
-            
+           
+        if DEBUG: 
+            print('expected_width,expected_height', expected_width,expected_height)
+            print('crop_image_width,crop_image_height', crop_image_width,crop_image_height)
         new_x = max(int(center_x - crop_image_width // 2),0)
         new_y = max(int(center_y - crop_image_height // 2),0)
-        # print("new_x, new_y", new_x, new_y)
+        if new_x + crop_image_width > image_width:
+            x_diff = (new_x + crop_image_width) - image_width
+            # move image left if it exceeds the image width
+            if new_x > x_diff and new_x - x_diff > 0:
+                new_x -= x_diff
+                x_diff = 0
+        if new_y + crop_image_height > image_height:
+            y_diff = (new_y + crop_image_height) - image_height
+            # move image top if it exceeds the image width
+            if new_y > y_diff and new_y - y_diff > 0:
+                new_y -= y_diff
+                y_diff = 0
+                
+        if DEBUG: 
+            print("new_x, new_y", new_x, new_y)
+            
+        
         fit_image_part = image[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
         fit_mask_part = mask[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
             
@@ -372,6 +395,14 @@ class CreateContextWindow:
         empty_mask_part = np.zeros((fit_image_part.shape[0] + y_diff, fit_image_part.shape[1] + x_diff), dtype=np.uint8)
         empty_mask_part[:fit_image_part.shape[0],:fit_image_part.shape[1]] = fit_mask_part
         
+        ori_img_ratio = blank_image.shape[0] / blank_image.shape[1]
+        target_ratio = target_height / target_width
+        if abs(ori_img_ratio - target_ratio) > 1:
+            print("Warning: image ratio is not same as target ratio. It might cause incorrect placement.")
+            print("blank_image.shape[0] / blank_image.shape[1]",blank_image.shape[0] , blank_image.shape[1], blank_image.shape[0] / blank_image.shape[1])
+            print("target_height / target_width", target_height , target_width, target_height / target_width)
+        
+        # scale seems wrong
         up_scale = fit_image_part.shape[0] / target_height
             
         resized_image_part = resize(blank_image, (target_width,target_height))
