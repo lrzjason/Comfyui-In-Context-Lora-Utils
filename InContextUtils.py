@@ -3,7 +3,7 @@ import torch
 import numpy as np
 import cv2
 
-DEBUG = False
+DEBUG = True
 def resize(img,resolution,interpolation=cv2.INTER_CUBIC):
     return cv2.resize(img,resolution, interpolation=interpolation)
 
@@ -370,21 +370,27 @@ class CreateContextWindow:
             print('crop_image_width,crop_image_height', crop_image_width,crop_image_height)
         new_x = max(int(center_x - crop_image_width // 2),0)
         new_y = max(int(center_y - crop_image_height // 2),0)
+        
+        print("new_x, new_y", new_x, new_y)
+        print("new_x + crop_image_width > image_width", new_x + crop_image_width > image_width)
         if new_x + crop_image_width > image_width:
             x_diff = (new_x + crop_image_width) - image_width
             # move image left if it exceeds the image width
-            if new_x > x_diff and new_x - x_diff > 0:
+            if new_x >= x_diff and new_x - x_diff >= 0:
                 new_x -= x_diff
                 x_diff = 0
+                
+        print("new_y + crop_image_height > image_height", new_y + crop_image_height > image_height)
         if new_y + crop_image_height > image_height:
             y_diff = (new_y + crop_image_height) - image_height
             # move image top if it exceeds the image width
-            if new_y > y_diff and new_y - y_diff > 0:
+            if new_y >= y_diff and new_y - y_diff >= 0:
                 new_y -= y_diff
                 y_diff = 0
                 
         if DEBUG: 
             print("new_x, new_y", new_x, new_y)
+            print("x_diff, y_diff", x_diff, y_diff)
             
         
         fit_image_part = image[new_y:new_y+crop_image_height, new_x:new_x+crop_image_width]
@@ -404,6 +410,10 @@ class CreateContextWindow:
         
         # scale seems wrong
         up_scale = fit_image_part.shape[0] / target_height
+        if DEBUG:
+            print("fit_image_part.shape[0]",fit_image_part.shape[0])
+            print("target_height",target_height)
+            print("up_scale",up_scale)
             
         resized_image_part = resize(blank_image, (target_width,target_height))
         resized_mask_part = resize(empty_mask_part, (target_width,target_height), cv2.INTER_NEAREST_EXACT)
