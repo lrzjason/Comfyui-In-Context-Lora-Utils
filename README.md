@@ -34,6 +34,7 @@ To make the workflow functional, ensure the following files are downloaded and p
 
 
 ## Change Logs:
+- **2024-12-14:** Adjust x_diff calculation and adjust fit image logic.
 - **2024-12-13:** Fix Incorrect Padding
 - **2024-12-12(2):** Fix center point calculation when close to edge.
 - **2024-12-12:** Reconstruct the node with new caculation.

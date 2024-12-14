@@ -47,20 +47,37 @@ class AutoPatch:
     def INPUT_TYPES(s):
         return {
                     "required": { 
+                        "image2": ("IMAGE",),
+                        # "mask2": ("MASK",),
+                    },
+                    "optional": { 
                         "mask2": ("MASK",),
-                    }
+                    },
         }
     RETURN_TYPES = ("STRING",  "STRING")
     RETURN_NAMES = ("patch_mode", "patch_type")
     FUNCTION = "auto_path"
     CATEGORY = "InContextUtils/AutoPatch"
-    def auto_path(self, mask2):
+    def auto_path(self, image2, mask2):
+        if torch.is_tensor(image2):
+            image = image2[0].clone()
+            image = image.detach().cpu().numpy()
         if mask2 is None:
-            raise NotImplementedError("mask2 must be a tensor")
+            # adding image parameter for generation mode
+            # raise NotImplementedError("mask2 must be a tensor")
+            # create mask with all 1 with image2 size
+            mask = np.full((image.shape[0], image.shape[1]), 1)
         else:
             if torch.is_tensor(mask2):
                 mask = mask2[0].clone()
                 mask = mask.detach().cpu().numpy()
+            
+        # match the mask with image size
+        if mask.shape[0] == 64 and mask.shape[1] == 64:
+            mask = np.full((image.shape[0], image.shape[1]), 1)
+    
+        if DEBUG:
+            print("mask.shape", mask.shape)
         
         # Convert the binary mask to 8-bit
         mask = (mask > 0).astype(np.uint8)
@@ -87,7 +104,8 @@ class AutoPatch:
 
             ori_x, ori_y, ori_bb_width, ori_bb_height = (x_min, y_min, x_max - x_min, y_max - y_min)
         
-        print("ori_bb_width, ori_bb_height",ori_bb_width, ori_bb_height)
+        if DEBUG:
+            print("ori_bb_width, ori_bb_height",ori_bb_width, ori_bb_height)
         patch_type_set = ["1:1","3:4","9:16"]
         vertical_ratio = [1/1,3/4,9/16]
         vertical_ratio = [round(ratio, 2) for ratio in vertical_ratio]
@@ -96,7 +114,8 @@ class AutoPatch:
         
         target_ratio = vertical_ratio
         mask_ratio = round(ori_bb_width / ori_bb_height, 2)
-        print("target_ratio, mask_ratio",target_ratio, mask_ratio)
+        if DEBUG:
+            print("target_ratio, mask_ratio",target_ratio, mask_ratio)
         if ori_bb_height > ori_bb_width:
             patch_mode = "patch_right"
             closest_ratio = min(target_ratio, key=lambda x: abs(x - mask_ratio))
@@ -107,7 +126,8 @@ class AutoPatch:
         # Find the closest vertical ratio
         patch_type = patch_type_set[target_ratio.index(closest_ratio)]
         
-        print("patch_mode, patch_type",patch_mode, patch_type)
+        if DEBUG:
+            print("patch_mode, patch_type",patch_mode, patch_type)
         return (patch_mode, patch_type, )
 
 
@@ -212,16 +232,27 @@ class CreateContextWindow:
         image_height, image_width, _ = image.shape
         
         if input_mask is None or np.all(mask == 0) or contours[0] is None:
-            print("Mask is not found. Return original image with mask all ones")
             image1 = input_image[0].clone()
-            image1, image1_mask, target_width, target_height, patch_mode = fit_image(image1,None,output_length,patch_mode,patch_type)
+            # create a mask with all ones
+            mask = np.ones((image_height, image_width))
+            # Convert the binary mask to 8-bit
+            mask = (mask > 0).astype(np.uint8)
+
+            # Alternatively, using OpenCV (if your mask is not binary, i.e., has non-1/0 values):
+            mask = cv2.convertScaleAbs(mask)
+            
+            # Step 1: Find contours of the "1" shape
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            # print("Mask is not found. Return original image with mask all ones")
+            # image1 = input_image[0].clone()
+            # image1, image1_mask, target_width, target_height, patch_mode = fit_image(image1,None,output_length,patch_mode,patch_type)
         
-            # print("image1.shape",image1.shape)
-            # print("image1_mask.shape",image1_mask.shape)
-            image1 = np.clip(255. * image1, 0, 255).astype(np.float32) / 255.0
-            image1 = torch.from_numpy(image1)[None,]
-            image1_mask = torch.from_numpy(image1_mask)[None,]
-            return (image1, image1_mask, patch_mode, 0, 0, 1, image1, image1_mask, )
+            # # print("image1.shape",image1.shape)
+            # # print("image1_mask.shape",image1_mask.shape)
+            # image1 = np.clip(255. * image1, 0, 255).astype(np.float32) / 255.0
+            # image1 = torch.from_numpy(image1)[None,]
+            # image1_mask = torch.from_numpy(image1_mask)[None,]
+            # return (image1, image1_mask, patch_mode, 0, 0, 1, image1, image1_mask, )
         
         
         patch_ratio = [int(x) for x in patch_type.split(":")]
@@ -378,7 +409,7 @@ class CreateContextWindow:
             # move image left if it exceeds the image width
             if new_x >= x_diff and new_x - x_diff >= 0:
                 new_x -= x_diff
-                x_diff = 0
+                x_diff = expected_width - crop_image_width
                 
         print("new_y + crop_image_height > image_height", new_y + crop_image_height > image_height)
         if new_y + crop_image_height > image_height:
@@ -386,7 +417,7 @@ class CreateContextWindow:
             # move image top if it exceeds the image width
             if new_y >= y_diff and new_y - y_diff >= 0:
                 new_y -= y_diff
-                y_diff = 0
+                y_diff = expected_height - crop_image_height
                 
         if DEBUG: 
             print("new_x, new_y", new_x, new_y)
@@ -415,6 +446,12 @@ class CreateContextWindow:
             print("target_height",target_height)
             print("up_scale",up_scale)
             
+            
+            print("fit_image_part.shape[1]",fit_image_part.shape[1])
+            print("target_width",target_width)
+            width_up_scale = fit_image_part.shape[1] / target_width
+            print("width_up_scale",width_up_scale)
+            
         resized_image_part = resize(blank_image, (target_width,target_height))
         resized_mask_part = resize(empty_mask_part, (target_width,target_height), cv2.INTER_NEAREST_EXACT)
         
@@ -427,109 +464,109 @@ class CreateContextWindow:
         fit_mask_part = torch.from_numpy(fit_mask_part)[None,]
         
         return (resized_image_part, resized_mask_part, patch_mode, new_x, new_y, up_scale, fit_image_part, fit_mask_part, )
-def fit_image(image,mask=None,output_length=1536,patch_mode="auto",patch_type="3:4",target_width=None,target_height=None):
-    if torch.is_tensor(image):
-        image = image.detach().cpu().numpy()
-    if mask is not None:
-        if torch.is_tensor(mask):
-            mask = mask.detach().cpu().numpy()
-    image_height, image_width, _ = image.shape
-    if target_width is None or target_height is None:
-        output_length, patch_mode, target_width, target_height = get_target_width_height(image, output_length, patch_mode, patch_type)
+# def fit_image(image,mask=None,output_length=1536,patch_mode="auto",patch_type="3:4",target_width=None,target_height=None):
+#     if torch.is_tensor(image):
+#         image = image.detach().cpu().numpy()
+#     if mask is not None:
+#         if torch.is_tensor(mask):
+#             mask = mask.detach().cpu().numpy()
+#     image_height, image_width, _ = image.shape
+#     if target_width is None or target_height is None:
+#         output_length, patch_mode, target_width, target_height = get_target_width_height(image, output_length, patch_mode, patch_type)
     
-    # up_scale = 1
-    # pad_x = 0
-    # pad_y = 0
-    # crop_x = 0
-    # crop_y = 0
-    if image_width < target_width or image_height < target_height:
-        # print("image too small, resize to ", target_width, target_height)
-        if image_height > image_width:
-            new_width = int(image_width*(target_height/image_height))
-            new_height = target_height
-            # print(new_width,new_height)
-            image = resize(image, (new_width,new_height))
-            # print("mask",mask)
-            # print("mask.shape",mask.shape)
-            if mask is not None:
-                mask = resize(mask, (new_width,new_height),cv2.INTER_NEAREST_EXACT)
-        else:
-            new_width = target_width
-            new_height = int(image_height*(target_width/image_width))
-            # print(new_width,new_height)
-            image = resize(image, (new_width,new_height))
+#     # up_scale = 1
+#     # pad_x = 0
+#     # pad_y = 0
+#     # crop_x = 0
+#     # crop_y = 0
+#     if image_width < target_width or image_height < target_height:
+#         # print("image too small, resize to ", target_width, target_height)
+#         if image_height > image_width:
+#             new_width = int(image_width*(target_height/image_height))
+#             new_height = target_height
+#             # print(new_width,new_height)
+#             image = resize(image, (new_width,new_height))
+#             # print("mask",mask)
+#             # print("mask.shape",mask.shape)
+#             if mask is not None:
+#                 mask = resize(mask, (new_width,new_height),cv2.INTER_NEAREST_EXACT)
+#         else:
+#             new_width = target_width
+#             new_height = int(image_height*(target_width/image_width))
+#             # print(new_width,new_height)
+#             image = resize(image, (new_width,new_height))
             
-            # print("mask",mask)
-            # print("mask.shape",mask.shape)
-            if mask is not None:
-                mask = resize(mask, (new_width,new_height),cv2.INTER_NEAREST_EXACT)
+#             # print("mask",mask)
+#             # print("mask.shape",mask.shape)
+#             if mask is not None:
+#                 mask = resize(mask, (new_width,new_height),cv2.INTER_NEAREST_EXACT)
             
-        image_height, image_width, _ = image.shape
+#         image_height, image_width, _ = image.shape
         
-        diff_x = target_width - image_width
-        # print("diff_x",diff_x)
-        diff_y = target_height - image_height
-        # print("diff_y",diff_y)
-        pad_x = abs(diff_x) // 2
-        pad_y = abs(diff_y) // 2
-        # add white pixels for padding
-        if diff_x > 0 or diff_y > 0:
-            resized_image = cv2.copyMakeBorder(
-                image,
-                pad_y, abs(diff_y) - pad_y,
-                pad_x, abs(diff_x) - pad_x,
-                cv2.BORDER_CONSTANT, value=(255, 255, 255)
-            )
-            if mask is not None:
-                resized_mask = cv2.copyMakeBorder(
-                    mask,
-                    pad_y, abs(diff_y) - pad_y,
-                    pad_x, abs(diff_x) - pad_x,
-                    cv2.BORDER_CONSTANT, value=(0, 0, 0)
-                )
-        # crop extra pixels for square
-        else:
-            resized_image = image[pad_y:image_height-pad_y, pad_x:image_width-pad_x]
-            if mask is not None:
-                resized_mask = mask[pad_y:image_height-pad_y, pad_x:image_width-pad_x]
-    else:
-        # get resized image size
-        image_height, image_width, _ = image.shape
-        # print("new size",image_height, image_width)
-        # simple center crop
-        scale_ratio = target_width / target_height
-        image_ratio = image_width / image_height
-        # referenced kohya ss code
-        if image_ratio > scale_ratio: 
-            up_scale = image_height / target_height
-        else:
-            up_scale = image_width / target_width
-        expanded_closest_size = (int(target_width * up_scale + 0.5), int(target_height * up_scale + 0.5))
-        diff_x = abs(expanded_closest_size[0] - image_width)
-        diff_y = abs(expanded_closest_size[1] - image_height)
+#         diff_x = target_width - image_width
+#         # print("diff_x",diff_x)
+#         diff_y = target_height - image_height
+#         # print("diff_y",diff_y)
+#         pad_x = abs(diff_x) // 2
+#         pad_y = abs(diff_y) // 2
+#         # add white pixels for padding
+#         if diff_x > 0 or diff_y > 0:
+#             resized_image = cv2.copyMakeBorder(
+#                 image,
+#                 pad_y, abs(diff_y) - pad_y,
+#                 pad_x, abs(diff_x) - pad_x,
+#                 cv2.BORDER_CONSTANT, value=(255, 255, 255)
+#             )
+#             if mask is not None:
+#                 resized_mask = cv2.copyMakeBorder(
+#                     mask,
+#                     pad_y, abs(diff_y) - pad_y,
+#                     pad_x, abs(diff_x) - pad_x,
+#                     cv2.BORDER_CONSTANT, value=(0, 0, 0)
+#                 )
+#         # crop extra pixels for square
+#         else:
+#             resized_image = image[pad_y:image_height-pad_y, pad_x:image_width-pad_x]
+#             if mask is not None:
+#                 resized_mask = mask[pad_y:image_height-pad_y, pad_x:image_width-pad_x]
+#     else:
+#         # get resized image size
+#         image_height, image_width, _ = image.shape
+#         # print("new size",image_height, image_width)
+#         # simple center crop
+#         scale_ratio = target_width / target_height
+#         image_ratio = image_width / image_height
+#         # referenced kohya ss code
+#         if image_ratio > scale_ratio: 
+#             up_scale = image_height / target_height
+#         else:
+#             up_scale = image_width / target_width
+#         expanded_closest_size = (int(target_width * up_scale + 0.5), int(target_height * up_scale + 0.5))
+#         diff_x = abs(expanded_closest_size[0] - image_width)
+#         diff_y = abs(expanded_closest_size[1] - image_height)
         
-        crop_x =  diff_x // 2
-        crop_y =  diff_y // 2
-        cropped_image = image[crop_y:image_height-crop_y, crop_x:image_width-crop_x]
-        resized_image = resize(cropped_image, (target_width,target_height))
+#         crop_x =  diff_x // 2
+#         crop_y =  diff_y // 2
+#         cropped_image = image[crop_y:image_height-crop_y, crop_x:image_width-crop_x]
+#         resized_image = resize(cropped_image, (target_width,target_height))
         
-        if mask is not None:
-            # print("mask",mask)
-            # print("mask.shape",mask.shape)
-            cropped_mask = mask[crop_y:image_height-crop_y, crop_x:image_width-crop_x]
-            resized_mask = resize(cropped_mask, (target_width,target_height),cv2.INTER_NEAREST_EXACT)
+#         if mask is not None:
+#             # print("mask",mask)
+#             # print("mask.shape",mask.shape)
+#             cropped_mask = mask[crop_y:image_height-crop_y, crop_x:image_width-crop_x]
+#             resized_mask = resize(cropped_mask, (target_width,target_height),cv2.INTER_NEAREST_EXACT)
 
-    if mask is None:
-        resized_mask = torch.ones((target_height,target_width))
+#     if mask is None:
+#         resized_mask = torch.ones((target_height,target_width))
     
-    if torch.is_tensor(resized_image):
-        resized_image = resized_image.detach().cpu().numpy()
-    if torch.is_tensor(resized_mask):
-        resized_mask = resized_mask.detach().cpu().numpy()
+#     if torch.is_tensor(resized_image):
+#         resized_image = resized_image.detach().cpu().numpy()
+#     if torch.is_tensor(resized_mask):
+#         resized_mask = resized_mask.detach().cpu().numpy()
     
-    # print("torch.is_tensor(resized_image)",torch.is_tensor(resized_image))
-    # print("torch.is_tensor(resized_mask)",torch.is_tensor(resized_mask))
-    return resized_image, resized_mask, target_width, target_height, patch_mode
+#     # print("torch.is_tensor(resized_image)",torch.is_tensor(resized_image))
+#     # print("torch.is_tensor(resized_mask)",torch.is_tensor(resized_mask))
+#     return resized_image, resized_mask, target_width, target_height, patch_mode
 
 class ConcatContextWindow:
     @classmethod
@@ -565,24 +602,29 @@ class ConcatContextWindow:
         if output_length % 64 != 0:
             output_length = output_length - (output_length % 64)
         image1 = first_image[0].clone()
-        image1, _, target_width, target_height, patch_mode = fit_image(image1, None, output_length, patch_mode, patch_type)
         
+        output_length, patch_mode, target_width, target_height = get_target_width_height(image1, output_length, patch_mode, patch_type)
+        
+        # create image1 mask
         image1_mask = torch.zeros((target_height,target_width))
         if second_image is None:
             # create blank image with patch color
             image2 = create_image_from_color(target_width,target_height, color=patch_color)
             image2 = torch.from_numpy(image2)
-            if second_mask is None:
-                image2_mask = torch.zeros((image2.shape[0], image2.shape[1]))
-            else:
-                image2_mask = second_mask[0].clone()
-            image2,image2_mask,_,_,_ = fit_image(image2, image2_mask, output_length, patch_mode, patch_type)
+            # if second_mask is None:
+            #     image2_mask = torch.ones((image2.shape[0], image2.shape[1]))
+            # else:
+            #     image2_mask = second_mask[0].clone()
+            
+            # image2,image2_mask,_,_,_ = fit_image(image2, image2_mask, output_length, patch_mode, patch_type)
         else:
             image2 = second_image[0]
-            if second_mask is None:
-                image2_mask = torch.ones((image1.shape[0], image1.shape[1]))
-            else:
-                image2_mask = second_mask[0].clone()
+            
+            
+        if second_mask is None:
+            image2_mask = torch.ones((image2.shape[0], image2.shape[1]))
+        else:
+            image2_mask = second_mask[0].clone()
         min_y = 0
         min_x = 0
         
