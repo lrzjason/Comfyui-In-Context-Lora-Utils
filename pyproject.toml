@@ -1,0 +1,14 @@
+[project]
+name = "comfyui-in-context-lora-utils"
+description = "NODES: Add Mask For IC Lora, Create Context Window, Concatenate Context Window, Auto Patch"
+version = "1.0.0"
+license = {file = "LICENSE"}
+
+[project.urls]
+Repository = "https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "Comfyui-In-Context-Lora-Utils"
+Icon = ""
