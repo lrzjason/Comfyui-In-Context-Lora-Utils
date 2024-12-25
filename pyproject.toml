@@ -9,6 +9,6 @@ Repository = "https://github.com/lrzjason/Comfyui-In-Context-Lora-Utils"
 #  Used by Comfy Registry https://comfyregistry.org
 
 [tool.comfy]
-PublisherId = ""
+PublisherId = "lrzjason"
 DisplayName = "Comfyui-In-Context-Lora-Utils"
 Icon = ""
